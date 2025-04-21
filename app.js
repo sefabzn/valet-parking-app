@@ -1,6 +1,23 @@
 const checkinBtn = document.getElementById('checkin-btn');
 const checkinMsg = document.getElementById('checkin-msg');
 
+// Search functionality
+const searchBar = document.getElementById('search-bar');
+if (searchBar) {
+    searchBar.addEventListener('input', async function() {
+        const query = searchBar.value.trim().toLowerCase();
+        if (!query) {
+            await loadCars();
+            return;
+        }
+        const cars = await getAllCars();
+        const filtered = cars.filter(car =>
+            !car.time_out && car.card_number.toLowerCase().includes(query)
+        );
+        renderCars(filtered);
+    });
+}
+
 // On DOMContentLoaded, load cars
 window.addEventListener('DOMContentLoaded', () => {
     loadCars();
@@ -15,37 +32,76 @@ checkinBtn.onclick = async function() {
         checkinMsg.textContent = 'All fields required';
         return;
     }
-    const res = await fetch('/api/cars/checkin', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ card_number: cardNumber, car_model: carModel, spot })
-    });
-    if (res.ok) {
-        checkinMsg.textContent = 'Checked in!';
-        document.getElementById('card-number').value = '';
-        document.getElementById('car-model').value = '';
-        document.getElementById('spot').value = '';
-        // Instantly update table
-        await loadCars();
-    } else {
-        checkinMsg.textContent = 'Check-in failed';
-    }
+    // Add car to IndexedDB
+    const car = {
+        id: Date.now(),
+        card_number: cardNumber,
+        car_model: carModel,
+        spot: spot,
+        time_in: new Date().toISOString(),
+        time_out: null
+    };
+    await addCar(car);
+    checkinMsg.textContent = 'Checked in!';
+    document.getElementById('card-number').value = '';
+    document.getElementById('car-model').value = '';
+    document.getElementById('spot').value = '';
+    await loadCars();
 };
 
 let allCars = [];
 
+// IndexedDB helpers
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('valet_parking', 1);
+        request.onupgradeneeded = event => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('cars')) {
+                db.createObjectStore('cars', { keyPath: 'id' });
+            }
+        };
+        request.onsuccess = event => resolve(event.target.result);
+        request.onerror = event => reject(event.target.error);
+    });
+}
+
+async function addCar(car) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('cars', 'readwrite');
+        tx.objectStore('cars').add(car);
+        tx.oncomplete = resolve;
+        tx.onerror = reject;
+    });
+}
+
+async function getAllCars() {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('cars', 'readonly');
+        const store = tx.objectStore('cars');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = reject;
+    });
+}
+
+async function updateCar(car) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('cars', 'readwrite');
+        tx.objectStore('cars').put(car);
+        tx.oncomplete = resolve;
+        tx.onerror = reject;
+    });
+}
+
+// Already implemented above, but ensure UI integration below.
+
 async function loadCars() {
-    const carTableDiv = document.getElementById('car-table');
-    if (carTableDiv) carTableDiv.innerHTML = '';
-    const res = await fetch('/api/cars/parked');
-    if (res.ok) {
-        allCars = await res.json();
-        renderCars(allCars);
-    } else {
-        if (carTableDiv) carTableDiv.innerHTML = '<div style="color:red">Could not load cars</div>';
-    }
+    allCars = (await getAllCars()).filter(car => !car.time_out);
+    renderCars(allCars);
 }
 
 function renderCars(cars) {
@@ -77,49 +133,43 @@ function renderCars(cars) {
     for (let i = 0; i < maxRows; i++) {
         let row = document.createElement('tr');
         spotNames.forEach(spot => {
-            let td = document.createElement('td');
+            let td = document.createElement('td'); 
             let car = spots[spot][i];
             if (car) {
                 td.innerHTML = `<div><b>${car.card_number}</b></div><div>${car.car_model || ''}</div><div>${new Date(car.time_in).toLocaleTimeString()}</div>`;
                 let btn = document.createElement('button');
                 btn.textContent = 'Check Out';
                 btn.onclick = () => checkOutCar(car.id);
-                td.appendChild(btn);
             }
             row.appendChild(td);
         });
         table.appendChild(row);
     }
-    // Render into car-table
-    const carTableDiv = document.getElementById('car-table');
-    if (carTableDiv) {
-        carTableDiv.innerHTML = '';
-        carTableDiv.appendChild(table);
+        const carTableDiv = document.getElementById('car-table');
+    if (!carTableDiv) return;
+    if (cars.length === 0) {
+        carTableDiv.innerHTML = '<div style="color:gray">No cars parked.</div>';
+        return;
     }
+    // Render the grouped-by-spot table
+    carTableDiv.innerHTML = '';
+    carTableDiv.appendChild(table);
 }
 
-// Search bar functionality
-const searchBar = document.getElementById('search-bar');
-if (searchBar) {
-    searchBar.addEventListener('input', function() {
-        const query = searchBar.value.trim().toLowerCase();
-        if (!query) {
-            renderCars(allCars);
-        } else {
-            const filtered = allCars.filter(car => car.card_number.toLowerCase().includes(query));
-            renderCars(filtered);
-        }
-    });
+window.handleCheckOut = async function(id) {
+    await checkOutCar(id);
 }
-
 
 async function checkOutCar(id) {
-    const res = await fetch(`/api/cars/checkout?id=${id}`, {
-        method: 'POST'
-    });
-    if (res.ok) {
-        loadCars();
-    } else {
-        alert('Check-out failed');
-    }
+    const db = await openDB();
+    const tx = db.transaction('cars', 'readwrite');
+    const store = tx.objectStore('cars');
+    const req = store.get(id);
+    req.onsuccess = async () => {
+        const car = req.result;
+        car.time_out = new Date().toISOString();
+        await updateCar(car);
+        await loadCars();
+    };
+    req.onerror = () => alert('Check-out failed');
 }
