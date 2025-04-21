@@ -1,5 +1,8 @@
 # Ignore the local SQLite database
 backend/valet.db
+
+# Ignore windsurf rules
+.windsurfrules
 # Ignore OS and editor files
 .DS_Store
 Thumbs.db
