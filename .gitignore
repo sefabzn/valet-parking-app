@@ -1,0 +1,13 @@
+# Ignore the local SQLite database
+backend/valet.db
+# Ignore OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+# Node/npm artifacts
+node_modules/
+# Ignore Go build artifacts
+*.exe
+*.out
+*.test
