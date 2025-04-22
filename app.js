@@ -1,6 +1,75 @@
 const checkinBtn = document.getElementById('checkin-btn');
 const checkinMsg = document.getElementById('checkin-msg');
 
+// --- Language switching ---
+const translations = {
+    tr: {
+        title: "Vale Park Uygulaması",
+        mainHeading: "Vale Park",
+        checkInHeading: "Araç Girişi",
+        cardNumber: "Kart Numarası",
+        carModel: "Araç Modeli",
+        checkInBtn: "Giriş Yap",
+        parkedCars: "Park Halindeki Araçlar",
+        searchPlaceholder: "Kart Numarası ile Ara",
+        allFieldsRequired: "Tüm alanlar zorunludur",
+        checkedIn: "Giriş yapıldı!",
+        noCars: "Park halinde araç yok.",
+        checkOut: "Çıkış Yap"
+    },
+    en: {
+        title: "Valet Parking App",
+        mainHeading: "Valet Parking",
+        checkInHeading: "Check In Car",
+        cardNumber: "Card Number",
+        carModel: "Car Model",
+        checkInBtn: "Check In",
+        parkedCars: "Parked Cars",
+        searchPlaceholder: "Search by Card Number",
+        allFieldsRequired: "All fields required",
+        checkedIn: "Checked in!",
+        noCars: "No cars parked.",
+        checkOut: "Check Out"
+    }
+};
+
+function setLanguage(lang) {
+    const t = translations[lang];
+    document.title = t.title;
+    const h1 = document.querySelector('h1');
+    if (h1) h1.textContent = t.mainHeading;
+    const checkInHeading = document.querySelector('.left-panel h2');
+    if (checkInHeading) checkInHeading.textContent = t.checkInHeading;
+    const cardInput = document.getElementById('card-number');
+    if (cardInput) cardInput.placeholder = t.cardNumber;
+    const modelInput = document.getElementById('car-model');
+    if (modelInput) modelInput.placeholder = t.carModel;
+    const checkInBtnEl = document.getElementById('checkin-btn');
+    if (checkInBtnEl) checkInBtnEl.textContent = t.checkInBtn;
+    const parkedHeading = document.querySelector('.right-panel h2');
+    if (parkedHeading) parkedHeading.textContent = t.parkedCars;
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) searchBar.placeholder = t.searchPlaceholder;
+    // Save lang
+    localStorage.setItem('lang', lang);
+    // Re-render cars to update button labels and empty state
+    loadCars();
+}
+
+window.setLanguage = setLanguage;
+
+const langSwitcher = document.getElementById('lang-switcher');
+let currentLang = localStorage.getItem('lang') || 'tr';
+if (langSwitcher) {
+    langSwitcher.value = currentLang;
+    langSwitcher.addEventListener('change', function() {
+        setLanguage(langSwitcher.value);
+    });
+}
+setLanguage(currentLang);
+
+// --- End language switching ---
+
 // Search functionality
 const searchBar = document.getElementById('search-bar');
 if (searchBar) {
@@ -29,7 +98,7 @@ checkinBtn.onclick = async function() {
     const spot = document.getElementById('spot').value;
     checkinMsg.textContent = '';
     if (!cardNumber || !carModel || !spot) {
-        checkinMsg.textContent = 'All fields required';
+        checkinMsg.textContent = translations[currentLang].allFieldsRequired;
         return;
     }
     // Add car to IndexedDB
@@ -42,7 +111,7 @@ checkinBtn.onclick = async function() {
         time_out: null
     };
     await addCar(car);
-    checkinMsg.textContent = 'Checked in!';
+    checkinMsg.textContent = translations[currentLang].checkedIn;
     document.getElementById('card-number').value = '';
     document.getElementById('car-model').value = '';
     document.getElementById('spot').value = '';
@@ -136,9 +205,9 @@ function renderCars(cars) {
             let td = document.createElement('td'); 
             let car = spots[spot][i];
             if (car) {
-                td.innerHTML = `<div><b>${car.card_number}</b></div><div>${car.car_model || ''}</div><div>${new Date(car.time_in).toLocaleTimeString()}</div>`;
+                td.innerHTML = `<div><b>${car.card_number}</b></div><div>${car.car_model || ''}</div><div>${new Date(car.time_in).toLocaleTimeString(currentLang === 'tr' ? 'tr-TR' : 'en-US')}</div>`;
                 let btn = document.createElement('button');
-                btn.textContent = 'Check Out';
+                btn.textContent = translations[currentLang].checkOut;
                 btn.onclick = () => checkOutCar(car.id);
             }
             row.appendChild(td);
@@ -148,7 +217,7 @@ function renderCars(cars) {
         const carTableDiv = document.getElementById('car-table');
     if (!carTableDiv) return;
     if (cars.length === 0) {
-        carTableDiv.innerHTML = '<div style="color:gray">No cars parked.</div>';
+        carTableDiv.innerHTML = `<div style='color:gray'>${translations[currentLang].noCars}</div>`;
         return;
     }
     // Render the grouped-by-spot table

@@ -9,7 +9,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valet Parking App</title>
+    <title>Vale Park Uygulaması</title>
     <link rel="stylesheet" href="style.css">
 <style>
 body {
@@ -131,13 +131,19 @@ th {
 </style>
 </head>
 <body>
+    <div style="width:100%; display:flex; justify-content:flex-end; align-items:center; padding:10px 20px 0 0;">
+      <select id="lang-switcher" style="font-size:1rem; padding:4px 10px; border-radius:5px;">
+        <option value="tr">Türkçe</option>
+        <option value="en">English</option>
+      </select>
+    </div>
     <div class="container">
-  <h1>Valet Parking</h1>
+  <h1>Vale Park</h1>
   <div class="split-layout">
     <div class="left-panel">
-      <h2>Check In Car</h2>
-      <input id="card-number" type="text" placeholder="Card Number" class="input-field">
-<input id="car-model" type="text" placeholder="Car Model" class="input-field">
+      <h2>Araç Girişi</h2>
+      <input id="card-number" type="text" placeholder="Kart Numarası" class="input-field">
+<input id="car-model" type="text" placeholder="Araç Modeli" class="input-field">
       
       <select id="spot" class="input-field">
   <option value="Ön">Ön</option>
@@ -148,12 +154,12 @@ th {
   <option value="Cami Otopark">Cami Otopark</option>
   <option value="Otopark">Otopark</option>
 </select>
-      <button id="checkin-btn">Check In</button>
+      <button id="checkin-btn">Giriş Yap</button>
       <div id="checkin-msg"></div>
     </div>
     <div class="right-panel">
-      <h2>Parked Cars</h2>
-      <input id="search-bar" type="text" placeholder="Search by Card Number">
+      <h2>Park Halindeki Araçlar</h2>
+      <input id="search-bar" type="text" placeholder="Kart Numarası ile Ara">
       <div id="car-table"></div>
     </div>
   </div>
