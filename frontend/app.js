@@ -1,6 +1,7 @@
 const checkinBtn = document.getElementById('checkin-btn');
 const checkinMsg = document.getElementById('checkin-msg');
 
+let allCars = [];
 // --- Language switching ---
 const translations = {
     tr: {
@@ -15,7 +16,8 @@ const translations = {
         allFieldsRequired: "Tüm alanlar zorunludur",
         checkedIn: "Giriş yapıldı!",
         noCars: "Park halinde araç yok.",
-        checkOut: "Çıkış Yap"
+        checkOut: "Çıkış Yap",
+        confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?"
     },
     en: {
         title: "Valet Parking App",
@@ -29,7 +31,8 @@ const translations = {
         allFieldsRequired: "All fields required",
         checkedIn: "Checked in!",
         noCars: "No cars parked.",
-        checkOut: "Check Out"
+        checkOut: "Check Out",
+        confirmCheckout: "Are you sure you want to check out the selected car?"
     }
 };
 
@@ -53,7 +56,8 @@ function setLanguage(lang) {
     // Save lang
     localStorage.setItem('lang', lang);
     // Re-render cars to update button labels and empty state
-    loadCars();
+    currentLang = lang;
+    renderCars(allCars);
 }
 
 window.setLanguage = setLanguage;
@@ -118,7 +122,6 @@ checkinBtn.onclick = async function() {
     await loadCars();
 };
 
-let allCars = [];
 
 // IndexedDB helpers
 function openDB() {
@@ -208,13 +211,19 @@ function renderCars(cars) {
                 td.innerHTML = `<div><b>${car.card_number}</b></div><div>${car.car_model || ''}</div><div>${new Date(car.time_in).toLocaleTimeString(currentLang === 'tr' ? 'tr-TR' : 'en-US')}</div>`;
                 let btn = document.createElement('button');
                 btn.textContent = translations[currentLang].checkOut;
-                btn.onclick = () => checkOutCar(car.id);
+                btn.onclick = () => {
+                    const confirmMsg = translations[currentLang].confirmCheckout || (currentLang === 'tr' ? 'Seçilen aracı çıkış yapmak istediğinize emin misiniz?' : 'Are you sure you want to check out the selected car?');
+                    if (window.confirm(confirmMsg)) {
+                        checkOutCar(car.id);
+                    }
+                };
+                td.appendChild(btn);
             }
             row.appendChild(td);
         });
         table.appendChild(row);
     }
-        const carTableDiv = document.getElementById('car-table');
+    const carTableDiv = document.getElementById('car-table');
     if (!carTableDiv) return;
     if (cars.length === 0) {
         carTableDiv.innerHTML = `<div style='color:gray'>${translations[currentLang].noCars}</div>`;
