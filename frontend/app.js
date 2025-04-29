@@ -116,6 +116,9 @@ checkinBtn.onclick = async function() {
     };
     await addCar(car);
     checkinMsg.textContent = translations[currentLang].checkedIn;
+setTimeout(() => {
+    checkinMsg.textContent = '';
+}, 2000);
     document.getElementById('card-number').value = '';
     document.getElementById('car-model').value = '';
     document.getElementById('spot').value = '';
