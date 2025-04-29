@@ -57,7 +57,8 @@ function setLanguage(lang) {
     localStorage.setItem('lang', lang);
     // Re-render cars to update button labels and empty state
     currentLang = lang;
-    renderCars(allCars);
+    renderCars(allCars); // Render with potentially filtered list, but count should be based on allCars
+    updateTotalCount(); // Update count explicitly after language change
 }
 
 window.setLanguage = setLanguage;
@@ -177,9 +178,20 @@ async function updateCar(car) {
 async function loadCars() {
     allCars = (await getAllCars()).filter(car => !car.time_out);
     renderCars(allCars);
+    updateTotalCount(); // Add this line to update count on initial load
+}
+
+function updateTotalCount() {
+    const totalCountSpan = document.getElementById('total-cars-count');
+    if (totalCountSpan) {
+        totalCountSpan.textContent = `(${allCars.length})`;
+    }
 }
 
 function renderCars(cars) {
+    // Update total count whenever rendering happens, based on the unfiltered list
+    updateTotalCount(); 
+
     // Define new spot names
     const spotNames = [
         "Ön",
@@ -193,6 +205,7 @@ function renderCars(cars) {
     // Group cars by spot
     const spots = {};
     spotNames.forEach(name => spots[name] = []);
+    // Use the potentially filtered 'cars' list for display, not 'allCars'
     cars.forEach(car => {
         if (spots[car.spot]) {
             spots[car.spot].push(car);
