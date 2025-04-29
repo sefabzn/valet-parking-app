@@ -16,13 +16,16 @@ h1 {
     text-align: center;
     color: #1976d2;
 }
-input {
+input, select, .input-field {
     width: 100%;
     padding: 10px;
     margin: 8px 0;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 18px;
+    height: 48px;
+    min-height: 48px;
+    box-sizing: border-box;
 }
 button {
     width: 100%;
@@ -31,7 +34,9 @@ button {
     color: #fff;
     border: none;
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 18px;
+    height: 48px;
+    min-height: 48px;
     cursor: pointer;
     margin-bottom: 10px;
 }
