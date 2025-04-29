@@ -17,7 +17,8 @@ const translations = {
         checkedIn: "Giriş yapıldı!",
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
-        confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?"
+        confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
+        totalCars: "Toplam: {0} araç"
     },
     en: {
         title: "Valet Parking App",
@@ -32,7 +33,8 @@ const translations = {
         checkedIn: "Checked in!",
         noCars: "No cars parked.",
         checkOut: "Check Out",
-        confirmCheckout: "Are you sure you want to check out the selected car?"
+        confirmCheckout: "Are you sure you want to check out the selected car?",
+        totalCars: "Total: {0} cars"
     }
 };
 
@@ -57,8 +59,7 @@ function setLanguage(lang) {
     localStorage.setItem('lang', lang);
     // Re-render cars to update button labels and empty state
     currentLang = lang;
-    renderCars(allCars); // Render with potentially filtered list, but count should be based on allCars
-    updateTotalCount(); // Update count explicitly after language change
+    renderCars(allCars);
 }
 
 window.setLanguage = setLanguage;
@@ -178,20 +179,18 @@ async function updateCar(car) {
 async function loadCars() {
     allCars = (await getAllCars()).filter(car => !car.time_out);
     renderCars(allCars);
-    updateTotalCount(); // Add this line to update count on initial load
+    updateTotalCount(allCars.length);
 }
 
-function updateTotalCount() {
-    const totalCountSpan = document.getElementById('total-cars-count');
-    if (totalCountSpan) {
-        totalCountSpan.textContent = `(${allCars.length})`;
+function updateTotalCount(count) {
+    const totalCountElement = document.getElementById('total-cars-count');
+    if (totalCountElement) {
+        const countText = translations[currentLang].totalCars.replace('{0}', count);
+        totalCountElement.textContent = ` (${countText})`;
     }
 }
 
 function renderCars(cars) {
-    // Update total count whenever rendering happens, based on the unfiltered list
-    updateTotalCount(); 
-
     // Define new spot names
     const spotNames = [
         "Ön",
@@ -205,7 +204,6 @@ function renderCars(cars) {
     // Group cars by spot
     const spots = {};
     spotNames.forEach(name => spots[name] = []);
-    // Use the potentially filtered 'cars' list for display, not 'allCars'
     cars.forEach(car => {
         if (spots[car.spot]) {
             spots[car.spot].push(car);
