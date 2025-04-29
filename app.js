@@ -186,7 +186,7 @@ function updateTotalCount(count) {
     const totalCountElement = document.getElementById('total-cars-count');
     if (totalCountElement) {
         const countText = translations[currentLang].totalCars.replace('{0}', count);
-        totalCountElement.textContent = ` (${countText})`;
+        totalCountElement.textContent = countText;
     }
 }
 
@@ -262,6 +262,8 @@ async function checkOutCar(id) {
         car.time_out = new Date().toISOString();
         await updateCar(car);
         await loadCars();
+        // Make sure the total count is updated
+        updateTotalCount(allCars.length);
     };
     req.onerror = () => alert('Check-out failed');
 }
