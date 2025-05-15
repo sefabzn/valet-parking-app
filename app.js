@@ -2,6 +2,128 @@ const checkinBtn = document.getElementById('checkin-btn');
 const checkinMsg = document.getElementById('checkin-msg');
 
 let allCars = [];
+let dailyStats = {
+    date: new Date().toDateString(),
+    totalCarsEntered: 0,
+    lastResetTime: new Date().getTime()
+};
+
+// Load daily stats from localStorage if available
+function loadDailyStats() {
+    const savedStats = localStorage.getItem('dailyStats');
+    if (savedStats) {
+        dailyStats = JSON.parse(savedStats);
+        
+        // Check if it's a new day
+        if (dailyStats.date !== new Date().toDateString()) {
+            // It's a new day, reset stats but save previous day's count
+            const previousCount = dailyStats.totalCarsEntered;
+            savePreviousDayStats(dailyStats.date, previousCount);
+            
+            // Reset for new day
+            dailyStats = {
+                date: new Date().toDateString(),
+                totalCarsEntered: 0,
+                lastResetTime: new Date().getTime()
+            };
+            saveDailyStats();
+        }
+    }
+    updateDailyStatsDisplay();
+}
+
+// Save daily stats to localStorage
+function saveDailyStats() {
+    localStorage.setItem('dailyStats', JSON.stringify(dailyStats));
+}
+
+// Save previous day's stats to history
+function savePreviousDayStats(date, count) {
+    let history = JSON.parse(localStorage.getItem('statsHistory') || '[]');
+    history.push({ date, totalCarsEntered: count });
+    // Keep only last 30 days
+    if (history.length > 30) {
+        history = history.slice(history.length - 30);
+    }
+    localStorage.setItem('statsHistory', JSON.stringify(history));
+}
+
+// Schedule daily reset at 11:59 PM
+function scheduleDailyReset() {
+    const now = new Date();
+    const night = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23, // 11 PM
+        59, // 59 minutes
+        0 // 0 seconds
+    );
+    
+    // If it's already past 11:59 PM, schedule for next day
+    if (now > night) {
+        night.setDate(night.getDate() + 1);
+    }
+    
+    const timeToReset = night.getTime() - now.getTime();
+    
+    // Schedule the reset
+    setTimeout(() => {
+        resetDailyStats();
+        // Schedule the next day's reset
+        scheduleDailyReset();
+    }, timeToReset);
+}
+
+// Reset daily stats and save previous day's data
+function resetDailyStats() {
+    // Save current stats before resetting
+    savePreviousDayStats(dailyStats.date, dailyStats.totalCarsEntered);
+    
+    // Reset stats for new day
+    dailyStats = {
+        date: new Date().toDateString(),
+        totalCarsEntered: 0,
+        lastResetTime: new Date().getTime()
+    };
+    saveDailyStats();
+    
+    // Clear all parked cars (they've been checked out automatically)
+    resetAllCars();
+    
+    // Update the UI
+    updateDailyStatsDisplay();
+}
+
+// Reset all parked cars (mark them as checked out)
+async function resetAllCars() {
+    const currentTime = new Date().toISOString();
+    const cars = await getAllCars();
+    const activeCars = cars.filter(car => !car.time_out);
+    
+    // Mark all active cars as checked out
+    for (const car of activeCars) {
+        car.time_out = currentTime;
+        await updateCar(car);
+    }
+    
+    // Reload cars to update UI
+    await loadCars();
+}
+
+// Update the daily stats display
+function updateDailyStatsDisplay() {
+    const statsElement = document.getElementById('daily-stats');
+    if (statsElement) {
+        const today = new Date().toLocaleDateString();
+        statsElement.textContent = translations[currentLang].dailyTotal.replace('{0}', dailyStats.totalCarsEntered);
+    }
+    
+    const resetInfoElement = document.getElementById('reset-info');
+    if (resetInfoElement) {
+        resetInfoElement.textContent = translations[currentLang].dailyReset;
+    }
+}
 // --- Language switching ---
 const translations = {
     tr: {
@@ -18,7 +140,10 @@ const translations = {
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
-        totalCars: "Toplam: {0} araç"
+        totalCars: "Toplam: {0} araç",
+        dailyTotal: "Bugün Giriş: {0} araç",
+        dailyReset: "Günlük sıfırlama: 23:59",
+        statsTitle: "Günlük İstatistikler"
     },
     en: {
         title: "Valet Parking App",
@@ -34,7 +159,10 @@ const translations = {
         noCars: "No cars parked.",
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
-        totalCars: "Total: {0} cars"
+        totalCars: "Total: {0} cars",
+        dailyTotal: "Today's Entries: {0} cars",
+        dailyReset: "Daily reset: 11:59 PM",
+        statsTitle: "Daily Statistics"
     }
 };
 
@@ -93,16 +221,24 @@ if (searchBar) {
     });
 }
 
-// On DOMContentLoaded, load cars
-window.addEventListener('DOMContentLoaded', () => {
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+    langSwitcher.value = currentLang;
+    setLanguage(currentLang);
     loadCars();
+    
+    // Initialize daily stats tracking
+    loadDailyStats();
+    
+    // Schedule daily reset at 11:59 PM
+    scheduleDailyReset();
 });
 
-checkinBtn.onclick = async function() {
+checkinBtn.onclick = async () => {
     const cardNumber = document.getElementById('card-number').value;
     const carModel = document.getElementById('car-model').value;
     const spot = document.getElementById('spot').value;
-    checkinMsg.textContent = '';
+
     if (!cardNumber || !carModel || !spot) {
         checkinMsg.textContent = translations[currentLang].allFieldsRequired;
         return;
@@ -117,10 +253,16 @@ checkinBtn.onclick = async function() {
         time_out: null
     };
     await addCar(car);
+    
+    // Increment daily stats counter
+    dailyStats.totalCarsEntered++;
+    saveDailyStats();
+    updateDailyStatsDisplay();
+    
     checkinMsg.textContent = translations[currentLang].checkedIn;
-setTimeout(() => {
-    checkinMsg.textContent = '';
-}, 2000);
+    setTimeout(() => {
+        checkinMsg.textContent = '';
+    }, 2000);
     document.getElementById('card-number').value = '';
     document.getElementById('car-model').value = '';
     document.getElementById('spot').value = '';
