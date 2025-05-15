@@ -123,6 +123,12 @@ function updateDailyStatsDisplay() {
     if (resetInfoElement) {
         resetInfoElement.textContent = translations[currentLang].dailyReset;
     }
+    
+    // Update the stats title based on language
+    const statsTitleElement = document.getElementById('stats-title');
+    if (statsTitleElement) {
+        statsTitleElement.textContent = translations[currentLang].statsTitle;
+    }
 }
 // --- Language switching ---
 const translations = {
@@ -183,6 +189,9 @@ function setLanguage(lang) {
     if (parkedHeading) parkedHeading.textContent = t.parkedCars;
     const searchBar = document.getElementById('search-bar');
     if (searchBar) searchBar.placeholder = t.searchPlaceholder;
+    
+    // Update daily statistics display with new language
+    updateDailyStatsDisplay();
     // Save lang
     localStorage.setItem('lang', lang);
     // Re-render cars to update button labels and empty state
