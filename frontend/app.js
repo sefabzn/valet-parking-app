@@ -12,24 +12,45 @@ let dailyStats = {
 function loadDailyStats() {
     const savedStats = localStorage.getItem('dailyStats');
     if (savedStats) {
-        dailyStats = JSON.parse(savedStats);
-        
-        // Check if it's a new day
-        if (dailyStats.date !== new Date().toDateString()) {
-            // It's a new day, reset stats but save previous day's count
-            const previousCount = dailyStats.totalCarsEntered;
-            savePreviousDayStats(dailyStats.date, previousCount);
+        try {
+            dailyStats = JSON.parse(savedStats);
             
-            // Reset for new day
-            dailyStats = {
-                date: new Date().toDateString(),
-                totalCarsEntered: 0,
-                lastResetTime: new Date().getTime()
-            };
-            saveDailyStats();
+            // Check if it's a new day
+            if (dailyStats.date !== new Date().toDateString()) {
+                // It's a new day, reset stats but save previous day's count
+                const previousCount = dailyStats.totalCarsEntered;
+                savePreviousDayStats(dailyStats.date, previousCount);
+                
+                // Reset for new day
+                dailyStats = {
+                    date: new Date().toDateString(),
+                    totalCarsEntered: 0,
+                    lastResetTime: new Date().getTime()
+                };
+                saveDailyStats();
+            }
+        } catch (e) {
+            console.error('Error parsing daily stats:', e);
+            // Create new stats if there was an error
+            createDefaultStats();
         }
+    } else {
+        // No saved stats found, create default
+        createDefaultStats();
     }
+    
+    // Always update the display
     updateDailyStatsDisplay();
+}
+
+// Create default stats for first-time users
+function createDefaultStats() {
+    dailyStats = {
+        date: new Date().toDateString(),
+        totalCarsEntered: 0,
+        lastResetTime: new Date().getTime()
+    };
+    saveDailyStats();
 }
 
 // Save daily stats to localStorage
@@ -331,6 +352,9 @@ async function loadCars() {
     allCars = (await getAllCars()).filter(car => !car.time_out);
     renderCars(allCars);
     updateTotalCount(allCars.length);
+    
+    // Always ensure daily stats are loaded and displayed
+    loadDailyStats();
 }
 
 function updateTotalCount(count) {
