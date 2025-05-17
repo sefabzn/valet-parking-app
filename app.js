@@ -229,6 +229,59 @@ const translations = {
     }
 };
 
+// Add reset button click handler
+document.getElementById('reset-data').onclick = async () => {
+    if (confirm(translations[currentLang].resetConfirmation)) {
+        try {
+            // Reset all cars
+            await resetAllCars();
+            
+            // Reset daily stats
+            dailyStats = {
+                date: new Date().toDateString(),
+                totalCarsEntered: 0,
+                lastResetTime: new Date().getTime(),
+                persistentTotal: 0
+            };
+            saveDailyStats();
+            
+            // Clear history
+            localStorage.removeItem('statsHistory');
+            
+            // Update display
+            updateDailyStatsDisplay();
+            updateTotalCount(0);
+            
+            // Clear the search input
+            const searchBar = document.getElementById('search-bar');
+            if (searchBar) {
+                searchBar.value = '';
+            }
+            
+            // Show success message
+            const checkinMsg = document.getElementById('checkin-msg');
+            if (checkinMsg) {
+                checkinMsg.textContent = translations[currentLang].checkedIn;
+                checkinMsg.style.color = 'green';
+                setTimeout(() => {
+                    checkinMsg.textContent = '';
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Error resetting data:', error);
+            // Show error message
+            const checkinMsg = document.getElementById('checkin-msg');
+            if (checkinMsg) {
+                checkinMsg.textContent = 'Error resetting data';
+                checkinMsg.style.color = 'red';
+                setTimeout(() => {
+                    checkinMsg.textContent = '';
+                }, 2000);
+            }
+        }
+    }
+};
+
 function setLanguage(lang) {
     const t = translations[lang];
     document.title = t.title;
