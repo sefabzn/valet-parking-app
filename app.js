@@ -318,6 +318,9 @@ async function resetAllCars() {
         allCars = [];
         await loadCars();
         updateTotalCount(0);
+        dailyTotal = 0;
+        setDailyTotal(0);
+        updateDailyTotalCount();
         checkinMsg.textContent = translations[currentLang].allCarsReset;
         setTimeout(() => {
             checkinMsg.textContent = '';
