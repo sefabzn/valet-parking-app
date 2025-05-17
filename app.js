@@ -350,33 +350,44 @@ async function resetAllCars() {
 // Add reset button event listener
 document.addEventListener('DOMContentLoaded', () => {
     const resetBtn = document.getElementById('reset-btn');
-    const passwordContainer = document.getElementById('reset-password-container');
-    const passwordInput = document.getElementById('reset-password');
+    if (!resetBtn) return;
 
-    if (resetBtn && passwordContainer && passwordInput) {
-        // Show password input when reset button is clicked
-        resetBtn.addEventListener('click', () => {
+    // Add click event to reset button
+    resetBtn.addEventListener('click', () => {
+        const passwordContainer = document.getElementById('reset-password-container');
+        const passwordInput = document.getElementById('reset-password');
+        
+        if (passwordContainer && passwordInput) {
             passwordContainer.style.display = 'block';
             passwordInput.focus();
-        });
+        }
+    });
 
-        // Handle Enter key press
+    // Add Enter key press handler
+    const passwordInput = document.getElementById('reset-password');
+    if (passwordInput) {
         passwordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 resetAllCars();
             }
         });
+    }
 
-        // Handle click outside password input
-        document.addEventListener('click', (e) => {
-            if (passwordContainer.style.display === 'block' && 
-                !passwordContainer.contains(e.target) && 
-                !resetBtn.contains(e.target)) {
-                passwordContainer.style.display = 'none';
+    // Add click outside handler
+    document.addEventListener('click', (e) => {
+        const passwordContainer = document.getElementById('reset-password-container');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        if (passwordContainer && passwordContainer.style.display === 'block' && 
+            !passwordContainer.contains(e.target) && 
+            !resetBtn.contains(e.target)) {
+            passwordContainer.style.display = 'none';
+            const passwordInput = document.getElementById('reset-password');
+            if (passwordInput) {
                 passwordInput.value = '';
             }
-        });
-    }
+        }
+    });
 });
 
 // Add password messages to translations
