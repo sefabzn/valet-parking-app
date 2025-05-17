@@ -303,7 +303,15 @@ async function checkOutCar(id) {
     req.onerror = () => alert('Check-out failed');
 }
 
+const RESET_PASSWORD = '55';
+
 async function resetAllCars() {
+    const password = document.getElementById('reset-password');
+    if (!password.value || password.value !== RESET_PASSWORD) {
+        alert(translations[currentLang].wrongPassword);
+        return;
+    }
+    
     if (!window.confirm('Tüm araçları sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
         return;
     }
@@ -318,6 +326,9 @@ async function resetAllCars() {
         allCars = [];
         await loadCars();
         updateTotalCount(0);
+        dailyTotal = 0;
+        setDailyTotal(0);
+        updateDailyTotalCount();
         checkinMsg.textContent = translations[currentLang].allCarsReset;
         setTimeout(() => {
             checkinMsg.textContent = '';
@@ -331,9 +342,25 @@ async function resetAllCars() {
 // Add reset button event listener
 document.addEventListener('DOMContentLoaded', () => {
     const resetBtn = document.getElementById('reset-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', resetAllCars);
+    const passwordContainer = document.getElementById('reset-password-container');
+    const passwordInput = document.getElementById('reset-password');
+
+    if (resetBtn && passwordContainer && passwordInput) {
+        resetBtn.addEventListener('click', () => {
+            passwordContainer.style.display = 'block';
+            passwordInput.focus();
+        });
+
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                resetAllCars();
+                passwordContainer.style.display = 'none';
+                passwordInput.value = '';
+            }
+        });
     }
 });
 
-
+// Add password messages to translations
+translations.tr.wrongPassword = 'Yanlış şifre!';
+translations.en.wrongPassword = 'Wrong password!';
