@@ -18,7 +18,9 @@ const translations = {
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
-        totalCars: "Toplam: {0} araç"
+        totalCars: "Toplam: {0} araç",
+        allCarsReset: "Tüm araçlar sıfırlandı"
+        
     },
     en: {
         title: "Valet Parking App",
@@ -34,7 +36,8 @@ const translations = {
         noCars: "No cars parked.",
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
-        totalCars: "Total: {0} cars"
+        totalCars: "Total: {0} cars",
+        allCarsReset: "All cars have been reset"
     }
 };
 
@@ -267,3 +270,38 @@ async function checkOutCar(id) {
     };
     req.onerror = () => alert('Check-out failed');
 }
+
+async function resetAllCars() {
+    if (!window.confirm('Tüm araçları sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+        return;
+    }
+    
+    const db = await openDB();
+    const tx = db.transaction('cars', 'readwrite');
+    const store = tx.objectStore('cars');
+    
+    // Clear all cars
+    const req = store.clear();
+    req.onsuccess = async () => {
+        allCars = [];
+        await loadCars();
+        updateTotalCount(0);
+        checkinMsg.textContent = translations[currentLang].allCarsReset;
+        setTimeout(() => {
+            checkinMsg.textContent = '';
+        }, 2000);
+    };
+    req.onerror = () => {
+        alert('Sıfırlama işlemi başarısız oldu');
+    };
+}
+
+// Add reset button event listener
+document.addEventListener('DOMContentLoaded', () => {
+    const resetBtn = document.getElementById('reset-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetAllCars);
+    }
+});
+
+
