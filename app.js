@@ -18,7 +18,7 @@ const translations = {
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
-        totalCars: "Toplam: {0} araç",
+        totalCars: "Şu anda: {0} araç",
         allCarsReset: "Tüm araçlar sıfırlandı"
         
     },
@@ -36,7 +36,7 @@ const translations = {
         noCars: "No cars parked.",
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
-        totalCars: "Total: {0} cars",
+        totalCars: "Current: {0} cars",
         allCarsReset: "All cars have been reset"
     }
 };
