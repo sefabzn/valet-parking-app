@@ -309,10 +309,14 @@ async function resetAllCars() {
     const password = document.getElementById('reset-password');
     if (!password.value || password.value !== RESET_PASSWORD) {
         alert(translations[currentLang].wrongPassword);
+        passwordContainer.style.display = 'none';
+        passwordInput.value = '';
         return;
     }
     
     if (!window.confirm('Tüm araçları sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+        passwordContainer.style.display = 'none';
+        passwordInput.value = '';
         return;
     }
     
@@ -333,9 +337,13 @@ async function resetAllCars() {
         setTimeout(() => {
             checkinMsg.textContent = '';
         }, 2000);
+        passwordContainer.style.display = 'none';
+        passwordInput.value = '';
     };
     req.onerror = () => {
         alert('Sıfırlama işlemi başarısız oldu');
+        passwordContainer.style.display = 'none';
+        passwordInput.value = '';
     };
 }
 
@@ -346,14 +354,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('reset-password');
 
     if (resetBtn && passwordContainer && passwordInput) {
+        // Show password input when reset button is clicked
         resetBtn.addEventListener('click', () => {
             passwordContainer.style.display = 'block';
             passwordInput.focus();
         });
 
+        // Handle Enter key press
         passwordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 resetAllCars();
+            }
+        });
+
+        // Handle click outside password input
+        document.addEventListener('click', (e) => {
+            if (passwordContainer.style.display === 'block' && 
+                !passwordContainer.contains(e.target) && 
+                !resetBtn.contains(e.target)) {
                 passwordContainer.style.display = 'none';
                 passwordInput.value = '';
             }
