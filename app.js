@@ -152,7 +152,12 @@ async function addCar(car) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction('cars', 'readwrite');
         tx.objectStore('cars').add(car);
-        tx.oncomplete = resolve;
+        tx.oncomplete = () => {
+            dailyTotal++;
+            setDailyTotal(dailyTotal);
+            updateDailyTotalCount();
+            resolve();
+        };
         tx.onerror = reject;
     });
 }
