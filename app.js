@@ -101,29 +101,28 @@ function scheduleDailyReset() {
         scheduleDailyReset();
     }, timeToReset);
 }
-
-// Reset daily stats and save previous day's data
-function resetDailyStats() {
-    // Save current stats before resetting
-    savePreviousDayStats(dailyStats.date, dailyStats.totalCarsEntered);
+// Update daily stats display to show both daily and persistent totals
+function updateDailyStatsDisplay() {
+    const dailyStatsDiv = document.getElementById('daily-stats');
+    const persistentTotalDiv = document.getElementById('persistent-total');
+    const resetInfoDiv = document.getElementById('reset-info');
     
-    // Store the persistent total before resetting
-    const persistentTotal = dailyStats.persistentTotal || 0;
+    if (dailyStatsDiv) {
+        dailyStatsDiv.textContent = `Bugünkü Toplam: ${dailyStats.totalCarsEntered}`;
+    }
     
-    // Reset stats for new day but keep the persistent total
-    dailyStats = {
-        date: new Date().toDateString(),
-        totalCarsEntered: 0,
-        lastResetTime: new Date().getTime(),
-        persistentTotal: persistentTotal  // Preserve the persistent total
-    };
-    saveDailyStats();
+    if (persistentTotalDiv) {
+        persistentTotalDiv.textContent = `Toplam: ${dailyStats.persistentTotal}`;
+    }
     
-    // Clear all parked cars (they've been checked out automatically)
-    resetAllCars();
+    // Format reset time
+    const resetDate = new Date(dailyStats.lastResetTime);
+    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const formattedTime = resetDate.toLocaleTimeString('tr-TR', options);
     
-    // Update the UI
-    updateDailyStatsDisplay();
+    if (resetInfoDiv) {
+        resetInfoDiv.textContent = `Son Sıfırlama: ${formattedTime}`;
+    }
 }
 
 // Reset all parked cars (mark them as checked out)
@@ -144,24 +143,28 @@ async function resetAllCars() {
 
 // Update the daily stats display
 function updateDailyStatsDisplay() {
-    const statsElement = document.getElementById('daily-stats');
-    if (statsElement) {
-        statsElement.textContent = translations[currentLang].dailyTotal.replace('{0}', dailyStats.totalCarsEntered);
-    }
-    
-    // Add persistent total display
-    const persistentTotalElement = document.getElementById('persistent-total');
-    if (persistentTotalElement) {
-        persistentTotalElement.textContent = translations[currentLang].persistentTotal.replace('{0}', dailyStats.persistentTotal || 0);
-    }
-    
-    const resetInfoElement = document.getElementById('reset-info');
-    if (resetInfoElement) {
-        resetInfoElement.textContent = translations[currentLang].dailyReset;
-    }
-    
-    // Update the stats title based on language
+    const dailyStatsDiv = document.getElementById('daily-stats');
+    const persistentTotalDiv = document.getElementById('persistent-total');
+    const resetInfoDiv = document.getElementById('reset-info');
     const statsTitleElement = document.getElementById('stats-title');
+    
+    if (dailyStatsDiv) {
+        dailyStatsDiv.textContent = translations[currentLang].dailyTotal.replace('{0}', dailyStats.totalCarsEntered);
+    }
+    
+    if (persistentTotalDiv) {
+        persistentTotalDiv.textContent = translations[currentLang].persistentTotal.replace('{0}', dailyStats.persistentTotal || 0);
+    }
+    
+    // Format reset time
+    const resetDate = new Date(dailyStats.lastResetTime);
+    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const formattedTime = resetDate.toLocaleTimeString('tr-TR', options);
+    
+    if (resetInfoDiv) {
+        resetInfoDiv.textContent = translations[currentLang].resetTime.replace('{0}', formattedTime);
+    }
+    
     if (statsTitleElement) {
         statsTitleElement.textContent = translations[currentLang].statsTitle;
     }
@@ -182,10 +185,18 @@ const translations = {
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
-        totalCars: "Toplam: {0} araç",
-        dailyTotal: "Bugün Giriş: {0} araç",
-        persistentTotal: "Tüm Zamanlar: {0} araç",
-        dailyReset: "Günlük sıfırlama: 23:59",
+        checkin: "Giriş Yap",
+        checkout: "Çıkış Yap",
+        location: "Konum",
+        plate: "Plaka",
+        timeIn: "Giriş Saati",
+        timeOut: "Çıkış Saati",
+        totalCars: "Toplam Araç",
+        dailyTotal: "Bugünkü Toplam: {0}",
+        persistentTotal: "Toplam: {0}",
+        resetData: "Tüm Verileri Sıfırla",
+        resetConfirmation: "Tüm verileri sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+        resetTime: "Son Sıfırlama: {0}",
         statsTitle: "Günlük İstatistikler"
     },
     en: {
@@ -202,10 +213,18 @@ const translations = {
         noCars: "No cars parked.",
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
-        totalCars: "Total: {0} cars",
-        dailyTotal: "Today's Entries: {0} cars",
-        persistentTotal: "All Time: {0} cars",
-        dailyReset: "Daily reset: 11:59 PM",
+        checkin: "Check In",
+        checkout: "Check Out",
+        location: "Location",
+        plate: "Plate",
+        timeIn: "Check-in Time",
+        timeOut: "Check-out Time",
+        totalCars: "Total Cars",
+        dailyTotal: "Daily Total: {0}",
+        persistentTotal: "Total: {0}",
+        resetData: "Reset All Data",
+        resetConfirmation: "Are you sure you want to reset all data? This action cannot be undone.",
+        resetTime: "Last Reset: {0}",
         statsTitle: "Daily Statistics"
     }
 };
