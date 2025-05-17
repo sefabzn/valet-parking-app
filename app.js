@@ -19,8 +19,8 @@ const translations = {
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
         totalCars: "Şu anda: {0} araç",
+        dailyTotalCars: "Bugün toplam: {0} araç",
         allCarsReset: "Tüm araçlar sıfırlandı"
-        
     },
     en: {
         title: "Valet Parking App",
@@ -37,6 +37,7 @@ const translations = {
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
         totalCars: "Current: {0} cars",
+        dailyTotalCars: "Daily total: {0} cars",
         allCarsReset: "All cars have been reset"
     }
 };
@@ -192,6 +193,32 @@ function updateTotalCount(count) {
         totalCountElement.textContent = countText;
     }
 }
+
+// Add daily total counter
+let dailyTotal = 0;
+
+function getDailyTotal() {
+    const today = new Date().toISOString().split('T')[0];
+    const storedTotal = localStorage.getItem(`dailyTotal_${today}`);
+    return storedTotal ? parseInt(storedTotal) : 0;
+}
+
+function setDailyTotal(value) {
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem(`dailyTotal_${today}`, value);
+}
+
+function updateDailyTotalCount() {
+    const dailyTotalElement = document.getElementById('daily-total-count');
+    if (dailyTotalElement) {
+        const countText = translations[currentLang].dailyTotalCars.replace('{0}', dailyTotal);
+        dailyTotalElement.textContent = countText;
+    }
+}
+
+// Update daily total when page loads
+dailyTotal = getDailyTotal();
+updateDailyTotalCount();
 
 function renderCars(cars) {
     // Define new spot names
