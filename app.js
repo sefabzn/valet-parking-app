@@ -2,186 +2,6 @@ const checkinBtn = document.getElementById('checkin-btn');
 const checkinMsg = document.getElementById('checkin-msg');
 
 let allCars = [];
-let dailyStats = {
-    date: new Date().toDateString(),
-    totalCarsEntered: 0,
-    lastResetTime: new Date().getTime(),
-    persistentTotal: 0,
-    activeCarsCount: 0  // Track active cars count
-};
-
-// Load daily stats and cars when the page loads
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load daily stats
-    loadDailyStats();
-    
-    // Load cars and update counts
-    await loadCars();
-    
-    // Update the total count display
-    updateTotalCount(dailyStats.activeCarsCount);
-});
-
-// Load daily stats from localStorage if available
-function loadDailyStats() {
-    const savedStats = localStorage.getItem('dailyStats');
-    if (savedStats) {
-        try {
-            dailyStats = JSON.parse(savedStats);
-            
-            // Check if it's a new day
-            if (dailyStats.date !== new Date().toDateString()) {
-                // It's a new day, reset stats but save previous day's count
-                const previousCount = dailyStats.totalCarsEntered;
-                savePreviousDayStats(dailyStats.date, previousCount);
-                
-                // Store the persistent total before resetting
-                const persistentTotal = dailyStats.persistentTotal || 0;
-                
-                // Reset for new day but keep the persistent total
-                dailyStats = {
-                    date: new Date().toDateString(),
-                    totalCarsEntered: 0,
-                    lastResetTime: new Date().getTime(),
-                    persistentTotal: persistentTotal  // Preserve the persistent total
-                };
-                saveDailyStats();
-            }
-        } catch (e) {
-            console.error('Error parsing daily stats:', e);
-            // Create new stats if there was an error
-            createDefaultStats();
-        }
-    } else {
-        // No saved stats found, create default
-        createDefaultStats();
-    }
-    
-    // Always update the display
-    updateDailyStatsDisplay();
-}
-
-// Create default stats for first-time users
-function createDefaultStats() {
-    dailyStats = {
-        date: new Date().toDateString(),
-        totalCarsEntered: 0,
-        lastResetTime: new Date().getTime(),
-        persistentTotal: 0
-    };
-    saveDailyStats();
-}
-
-// Save daily stats to localStorage
-function saveDailyStats() {
-    localStorage.setItem('dailyStats', JSON.stringify(dailyStats));
-}
-
-// Save previous day's stats to history
-function savePreviousDayStats(date, count) {
-    let history = JSON.parse(localStorage.getItem('statsHistory') || '[]');
-    history.push({ date, totalCarsEntered: count });
-    // Keep only last 30 days
-    if (history.length > 30) {
-        history = history.slice(history.length - 30);
-    }
-    localStorage.setItem('statsHistory', JSON.stringify(history));
-}
-
-// Schedule daily reset at 11:59 PM
-function scheduleDailyReset() {
-    const now = new Date();
-    const night = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        23, // 11 PM
-        59, // 59 minutes
-        0 // 0 seconds
-    );
-    
-    // If it's already past 11:59 PM, schedule for next day
-    if (now > night) {
-        night.setDate(night.getDate() + 1);
-    }
-    
-    const timeToReset = night.getTime() - now.getTime();
-    
-    // Schedule the reset
-    setTimeout(() => {
-        resetDailyStats();
-        // Schedule the next day's reset
-        scheduleDailyReset();
-    }, timeToReset);
-}
-// Update daily stats display to show both daily and persistent totals
-function updateDailyStatsDisplay() {
-    const dailyStatsDiv = document.getElementById('daily-stats');
-    const persistentTotalDiv = document.getElementById('persistent-total');
-    const resetInfoDiv = document.getElementById('reset-info');
-    
-    if (dailyStatsDiv) {
-        dailyStatsDiv.textContent = `Bugünkü Toplam: ${dailyStats.totalCarsEntered}`;
-    }
-    
-    if (persistentTotalDiv) {
-        persistentTotalDiv.textContent = `Toplam: ${dailyStats.persistentTotal}`;
-    }
-    
-    // Format reset time
-    const resetDate = new Date(dailyStats.lastResetTime);
-    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    const formattedTime = resetDate.toLocaleTimeString('tr-TR', options);
-    
-    if (resetInfoDiv) {
-        resetInfoDiv.textContent = `Son Sıfırlama: ${formattedTime}`;
-    }
-}
-
-// Reset all parked cars (mark them as checked out)
-async function resetAllCars() {
-    const currentTime = new Date().toISOString();
-    const cars = await getAllCars();
-    const activeCars = cars.filter(car => !car.time_out);
-    
-    // Mark all active cars as checked out
-    for (const car of activeCars) {
-        car.time_out = currentTime;
-        await updateCar(car);
-    }
-    
-    // Reload cars to update UI
-    await loadCars();
-}
-
-// Update the daily stats display
-function updateDailyStatsDisplay() {
-    const dailyStatsDiv = document.getElementById('daily-stats');
-    const persistentTotalDiv = document.getElementById('persistent-total');
-    const resetInfoDiv = document.getElementById('reset-info');
-    const statsTitleElement = document.getElementById('stats-title');
-    
-    if (dailyStatsDiv) {
-        dailyStatsDiv.textContent = translations[currentLang].dailyTotal.replace('{0}', dailyStats.totalCarsEntered);
-    }
-    
-    if (persistentTotalDiv) {
-        persistentTotalDiv.textContent = translations[currentLang].persistentTotal.replace('{0}', dailyStats.persistentTotal || 0);
-    }
-    
-    // Format reset time
-    const resetDate = new Date(dailyStats.lastResetTime);
-    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    const formattedTime = resetDate.toLocaleTimeString('tr-TR', options);
-    
-    if (resetInfoDiv) {
-        resetInfoDiv.textContent = translations[currentLang].resetTime.replace('{0}', formattedTime);
-    }
-    
-    if (statsTitleElement) {
-        statsTitleElement.textContent = translations[currentLang].statsTitle;
-    }
-}
 // --- Language switching ---
 const translations = {
     tr: {
@@ -198,19 +18,7 @@ const translations = {
         noCars: "Park halinde araç yok.",
         checkOut: "Çıkış Yap",
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
-        checkin: "Giriş Yap",
-        checkout: "Çıkış Yap",
-        location: "Konum",
-        plate: "Plaka",
-        timeIn: "Giriş Saati",
-        timeOut: "Çıkış Saati",
-        totalCars: "Toplam Araç",
-        dailyTotal: "Bugünkü Toplam: {0}",
-        persistentTotal: "Toplam: {0}",
-        resetData: "Tüm Verileri Sıfırla",
-        resetConfirmation: "Tüm verileri sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.",
-        resetTime: "Son Sıfırlama: {0}",
-        statsTitle: "Günlük İstatistikler"
+        totalCars: "Toplam: {0} araç"
     },
     en: {
         title: "Valet Parking App",
@@ -226,72 +34,7 @@ const translations = {
         noCars: "No cars parked.",
         checkOut: "Check Out",
         confirmCheckout: "Are you sure you want to check out the selected car?",
-        checkin: "Check In",
-        checkout: "Check Out",
-        location: "Location",
-        plate: "Plate",
-        timeIn: "Check-in Time",
-        timeOut: "Check-out Time",
-        totalCars: "Total Cars",
-        dailyTotal: "Daily Total: {0}",
-        persistentTotal: "Total: {0}",
-        resetData: "Reset All Data",
-        resetConfirmation: "Are you sure you want to reset all data? This action cannot be undone.",
-        resetTime: "Last Reset: {0}",
-        statsTitle: "Daily Statistics"
-    }
-};
-
-// Add reset button click handler
-document.getElementById('reset-data').onclick = async () => {
-    if (confirm(translations[currentLang].resetConfirmation)) {
-        try {
-            // Reset all cars
-            await resetAllCars();
-            
-            // Reset daily stats
-            dailyStats = {
-                date: new Date().toDateString(),
-                totalCarsEntered: 0,
-                lastResetTime: new Date().getTime(),
-                persistentTotal: 0
-            };
-            saveDailyStats();
-            
-            // Clear history
-            localStorage.removeItem('statsHistory');
-            
-            // Update display
-            updateDailyStatsDisplay();
-            updateTotalCount(0);
-            
-            // Clear the search input
-            const searchBar = document.getElementById('search-bar');
-            if (searchBar) {
-                searchBar.value = '';
-            }
-            
-            // Show success message
-            const checkinMsg = document.getElementById('checkin-msg');
-            if (checkinMsg) {
-                checkinMsg.textContent = translations[currentLang].checkedIn;
-                checkinMsg.style.color = 'green';
-                setTimeout(() => {
-                    checkinMsg.textContent = '';
-                }, 2000);
-            }
-        } catch (error) {
-            console.error('Error resetting data:', error);
-            // Show error message
-            const checkinMsg = document.getElementById('checkin-msg');
-            if (checkinMsg) {
-                checkinMsg.textContent = 'Error resetting data';
-                checkinMsg.style.color = 'red';
-                setTimeout(() => {
-                    checkinMsg.textContent = '';
-                }, 2000);
-            }
-        }
+        totalCars: "Total: {0} cars"
     }
 };
 
@@ -312,9 +55,6 @@ function setLanguage(lang) {
     if (parkedHeading) parkedHeading.textContent = t.parkedCars;
     const searchBar = document.getElementById('search-bar');
     if (searchBar) searchBar.placeholder = t.searchPlaceholder;
-    
-    // Update daily statistics display with new language
-    updateDailyStatsDisplay();
     // Save lang
     localStorage.setItem('lang', lang);
     // Re-render cars to update button labels and empty state
@@ -353,24 +93,16 @@ if (searchBar) {
     });
 }
 
-// Initial setup
-document.addEventListener('DOMContentLoaded', () => {
-    langSwitcher.value = currentLang;
-    setLanguage(currentLang);
+// On DOMContentLoaded, load cars
+window.addEventListener('DOMContentLoaded', () => {
     loadCars();
-    
-    // Initialize daily stats tracking
-    loadDailyStats();
-    
-    // Schedule daily reset at 11:59 PM
-    scheduleDailyReset();
 });
 
-checkinBtn.onclick = async () => {
+checkinBtn.onclick = async function() {
     const cardNumber = document.getElementById('card-number').value;
     const carModel = document.getElementById('car-model').value;
     const spot = document.getElementById('spot').value;
-
+    checkinMsg.textContent = '';
     if (!cardNumber || !carModel || !spot) {
         checkinMsg.textContent = translations[currentLang].allFieldsRequired;
         return;
@@ -385,17 +117,10 @@ checkinBtn.onclick = async () => {
         time_out: null
     };
     await addCar(car);
-    
-    // Increment both daily and persistent counters
-    dailyStats.totalCarsEntered++;
-    dailyStats.persistentTotal = (dailyStats.persistentTotal || 0) + 1;
-    saveDailyStats();
-    updateDailyStatsDisplay();
-    
     checkinMsg.textContent = translations[currentLang].checkedIn;
-    setTimeout(() => {
-        checkinMsg.textContent = '';
-    }, 2000);
+setTimeout(() => {
+    checkinMsg.textContent = '';
+}, 2000);
     document.getElementById('card-number').value = '';
     document.getElementById('car-model').value = '';
     document.getElementById('spot').value = '';
@@ -455,9 +180,6 @@ async function loadCars() {
     allCars = (await getAllCars()).filter(car => !car.time_out);
     renderCars(allCars);
     updateTotalCount(allCars.length);
-    
-    // Always ensure daily stats are loaded and displayed
-    loadDailyStats();
 }
 
 function updateTotalCount(count) {
@@ -466,9 +188,6 @@ function updateTotalCount(count) {
         const countText = translations[currentLang].totalCars.replace('{0}', count);
         totalCountElement.textContent = countText;
     }
-    
-    // Update daily stats display with active cars count
-    updateDailyStatsDisplay();
 }
 
 function renderCars(cars) {
