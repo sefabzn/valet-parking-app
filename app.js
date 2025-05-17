@@ -6,8 +6,21 @@ let dailyStats = {
     date: new Date().toDateString(),
     totalCarsEntered: 0,
     lastResetTime: new Date().getTime(),
-    persistentTotal: 0  // This will never reset, only increase
+    persistentTotal: 0,
+    activeCarsCount: 0  // Track active cars count
 };
+
+// Load daily stats and cars when the page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    // Load daily stats
+    loadDailyStats();
+    
+    // Load cars and update counts
+    await loadCars();
+    
+    // Update the total count display
+    updateTotalCount(dailyStats.activeCarsCount);
+});
 
 // Load daily stats from localStorage if available
 function loadDailyStats() {
@@ -453,6 +466,9 @@ function updateTotalCount(count) {
         const countText = translations[currentLang].totalCars.replace('{0}', count);
         totalCountElement.textContent = countText;
     }
+    
+    // Update daily stats display with active cars count
+    updateDailyStatsDisplay();
 }
 
 function renderCars(cars) {
