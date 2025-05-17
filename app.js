@@ -5,7 +5,8 @@ let allCars = [];
 let dailyStats = {
     date: new Date().toDateString(),
     totalCarsEntered: 0,
-    lastResetTime: new Date().getTime()
+    lastResetTime: new Date().getTime(),
+    persistentTotal: 0  // This will never reset, only increase
 };
 
 // Load daily stats from localStorage if available
@@ -21,11 +22,15 @@ function loadDailyStats() {
                 const previousCount = dailyStats.totalCarsEntered;
                 savePreviousDayStats(dailyStats.date, previousCount);
                 
-                // Reset for new day
+                // Store the persistent total before resetting
+                const persistentTotal = dailyStats.persistentTotal || 0;
+                
+                // Reset for new day but keep the persistent total
                 dailyStats = {
                     date: new Date().toDateString(),
                     totalCarsEntered: 0,
-                    lastResetTime: new Date().getTime()
+                    lastResetTime: new Date().getTime(),
+                    persistentTotal: persistentTotal  // Preserve the persistent total
                 };
                 saveDailyStats();
             }
@@ -48,7 +53,8 @@ function createDefaultStats() {
     dailyStats = {
         date: new Date().toDateString(),
         totalCarsEntered: 0,
-        lastResetTime: new Date().getTime()
+        lastResetTime: new Date().getTime(),
+        persistentTotal: 0
     };
     saveDailyStats();
 }
@@ -101,11 +107,15 @@ function resetDailyStats() {
     // Save current stats before resetting
     savePreviousDayStats(dailyStats.date, dailyStats.totalCarsEntered);
     
-    // Reset stats for new day
+    // Store the persistent total before resetting
+    const persistentTotal = dailyStats.persistentTotal || 0;
+    
+    // Reset stats for new day but keep the persistent total
     dailyStats = {
         date: new Date().toDateString(),
         totalCarsEntered: 0,
-        lastResetTime: new Date().getTime()
+        lastResetTime: new Date().getTime(),
+        persistentTotal: persistentTotal  // Preserve the persistent total
     };
     saveDailyStats();
     
@@ -136,8 +146,13 @@ async function resetAllCars() {
 function updateDailyStatsDisplay() {
     const statsElement = document.getElementById('daily-stats');
     if (statsElement) {
-        const today = new Date().toLocaleDateString();
         statsElement.textContent = translations[currentLang].dailyTotal.replace('{0}', dailyStats.totalCarsEntered);
+    }
+    
+    // Add persistent total display
+    const persistentTotalElement = document.getElementById('persistent-total');
+    if (persistentTotalElement) {
+        persistentTotalElement.textContent = translations[currentLang].persistentTotal.replace('{0}', dailyStats.persistentTotal || 0);
     }
     
     const resetInfoElement = document.getElementById('reset-info');
@@ -169,6 +184,7 @@ const translations = {
         confirmCheckout: "Seçilen aracı çıkış yapmak istediğinize emin misiniz?",
         totalCars: "Toplam: {0} araç",
         dailyTotal: "Bugün Giriş: {0} araç",
+        persistentTotal: "Tüm Zamanlar: {0} araç",
         dailyReset: "Günlük sıfırlama: 23:59",
         statsTitle: "Günlük İstatistikler"
     },
@@ -188,6 +204,7 @@ const translations = {
         confirmCheckout: "Are you sure you want to check out the selected car?",
         totalCars: "Total: {0} cars",
         dailyTotal: "Today's Entries: {0} cars",
+        persistentTotal: "All Time: {0} cars",
         dailyReset: "Daily reset: 11:59 PM",
         statsTitle: "Daily Statistics"
     }
@@ -284,8 +301,9 @@ checkinBtn.onclick = async () => {
     };
     await addCar(car);
     
-    // Increment daily stats counter
+    // Increment both daily and persistent counters
     dailyStats.totalCarsEntered++;
+    dailyStats.persistentTotal = (dailyStats.persistentTotal || 0) + 1;
     saveDailyStats();
     updateDailyStatsDisplay();
     
